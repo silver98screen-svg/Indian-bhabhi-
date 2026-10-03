@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FreeFrame AI - Image to Video</title>
+    <title>FreeFrame AI - Real Motion Generator</title>
     <style>
         :root {
             --bg-color: #0f1117;
@@ -16,7 +16,7 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-main);
             margin: 0;
@@ -35,7 +35,6 @@
 
         header {
             text-align: center;
-            margin-bottom: 10px;
         }
 
         header h1 {
@@ -99,7 +98,6 @@
             font-size: 16px;
             font-weight: bold;
             cursor: pointer;
-            transition: background-color 0.2s;
         }
 
         button:hover {
@@ -132,10 +130,6 @@
             display: none;
             background: #000;
         }
-
-        canvas {
-            display: none;
-        }
     </style>
 </head>
 <body>
@@ -143,42 +137,33 @@
 <div class="container">
     <header>
         <h1>FreeFrame AI</h1>
-        <p>Free Image-to-Video Generator</p>
+        <p>Real AI Character & Facial Motion Generator</p>
     </header>
 
     <div class="card">
-        <h2>1. Upload Image</h2>
+        <h2>1. Upload Character Image</h2>
         <input type="file" id="imageInput" accept="image/*" onchange="previewImage(event)">
         <img id="imagePreview" alt="Image preview">
     </div>
 
     <div class="card">
-        <h2>2. Describe & Duration</h2>
-        <label for="promptInput">Video prompt</label>
-        <textarea id="promptInput" placeholder="Describe the motion e.g., camera zoom in, slow movement..."></textarea>
+        <h2>2. Describe Real Motion</h2>
+        <label for="promptInput">Motion Prompt</label>
+        <textarea id="promptInput" placeholder="E.g., Funny cartoon style, opening mouth wide, head bouncing up and down, saliva dropping, expressive facial reaction..."></textarea>
 
-        <label for="durationSelect">Video Duration (Length)</label>
-        <select id="durationSelect">
-            <option value="120000" selected>2 Minutes (120 Sec)</option>
-            <option value="60000">1 Minute (60 Sec)</option>
-            <option value="30000">30 Seconds</option>
-            <option value="10000">10 Seconds</option>
-        </select>
-
-        <button id="generateBtn" onclick="generateVideo()">Generate Video</button>
+        <button id="generateBtn" onclick="generateRealVideo()">Generate Real Motion Video</button>
         <div id="statusMessage"></div>
     </div>
 
     <div class="card">
-        <h2>3. Your video</h2>
+        <h2>3. Output Video</h2>
         <video id="videoResult" controls autoplay loop playsinline></video>
-        <canvas id="animCanvas"></canvas>
     </div>
 </div>
 
 <script>
-    let uploadedImgObj = new Image();
-    let isImageLoaded = false;
+    const REPLICATE_KEY = "R8_ce87Mh6zZrLjshQBf2VlrJMGn1VOGu945nAqH";
+    let base64Image = "";
 
     function previewImage(event) {
         const input = event.target;
@@ -188,94 +173,85 @@
             reader.onload = function(e) {
                 preview.src = e.target.result;
                 preview.style.display = 'block';
-                uploadedImgObj.src = e.target.result;
-                uploadedImgObj.onload = () => { isImageLoaded = true; };
+                base64Image = e.target.result;
             }
             reader.readAsDataURL(input.files[0]);
         }
     }
 
-    async function generateVideo() {
+    async function generateRealVideo() {
+        const promptText = document.getElementById('promptInput').value || "Expressive cartoon motion, opening mouth, dynamic movement";
         const statusMsg = document.getElementById('statusMessage');
         const generateBtn = document.getElementById('generateBtn');
         const videoResult = document.getElementById('videoResult');
-        const canvas = document.getElementById('animCanvas');
-        const durationSelect = document.getElementById('durationSelect');
-        const ctx = canvas.getContext('2d');
 
-        if (!isImageLoaded) {
-            alert('Kripya pehle ek image upload karein!');
+        if (!base64Image) {
+            alert('Kripya pehle ek character image upload karein!');
             return;
         }
 
-        const duration = parseInt(durationSelect.value); // Selected time (default 2 mins)
         generateBtn.disabled = true;
-        statusMsg.innerText = `AI 2-minute video render kar raha hai... Kripya thoda wait karein...`;
+        statusMsg.innerText = 'AI model character motion render kar raha hai... Please wait (30-60 sec)...';
         videoResult.style.display = 'none';
 
         try {
-            canvas.width = uploadedImgObj.naturalWidth || 640;
-            canvas.height = uploadedImgObj.naturalHeight || 360;
+            const proxy = "https://corsproxy.io/?";
+            const targetUrl = "https://api.replicate.com/v1/predictions";
+            
+            const response = await fetch(proxy + encodeURIComponent(targetUrl), {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${REPLICATE_KEY}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    version: "3f0457e4619da25d0d036109a9b068d3976b4d080282aa9e1a0d8e00e9d6d7c3",
+                    input: {
+                        input_image: base64Image,
+                        prompt: promptText,
+                        motion_bucket_id: 180,
+                        cond_aug: 0.02
+                    }
+                })
+            });
 
-            const stream = canvas.captureStream(30); // 30 FPS
-            let mediaRecorder;
-            let recordedChunks = [];
+            const data = await response.json();
 
-            try {
-                mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
-            } catch (e) {
-                mediaRecorder = new MediaRecorder(stream);
+            if (!response.ok || data.error) {
+                throw new Error(data.error || "Prediction request failed");
             }
 
-            mediaRecorder.ondataavailable = (e) => {
-                if (e.data.size > 0) recordedChunks.push(e.data);
-            };
+            let pollUrl = proxy + encodeURIComponent(data.urls.get);
+            let finalVideoUrl = "";
 
-            mediaRecorder.onstop = () => {
-                const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || 'video/webm' });
-                const videoUrl = URL.createObjectURL(blob);
-                videoResult.src = videoUrl;
+            while (true) {
+                await new Promise(res => setTimeout(res, 4000));
+                const pollRes = await fetch(pollUrl, {
+                    headers: { "Authorization": `Bearer ${REPLICATE_KEY}` }
+                });
+                const pollData = await pollRes.json();
+
+                if (pollData.status === "succeeded") {
+                    finalVideoUrl = Array.isArray(pollData.output) ? pollData.output[0] : pollData.output;
+                    break;
+                } else if (pollData.status === "failed" || pollData.status === "canceled") {
+                    throw new Error("AI rendering failed. Try a different prompt.");
+                }
+                statusMsg.innerText = `Rendering status: ${pollData.status}... AI motion generate ho raha hai...`;
+            }
+
+            if (finalVideoUrl) {
+                videoResult.src = finalVideoUrl;
                 videoResult.style.display = 'block';
                 videoResult.load();
                 videoResult.play();
-                statusMsg.innerText = '2 Minute ka video successfully generate ho gaya hai!';
-                generateBtn.disabled = false;
-            };
-
-            mediaRecorder.start();
-
-            let startTime = performance.now();
-
-            function animate(currentTime) {
-                let elapsed = currentTime - startTime;
-                let progress = Math.min(elapsed / duration, 1);
-
-                // Smooth slow breathing motion for 2 minutes
-                let scale = 1 + (Math.sin(progress * Math.PI * 4) * 0.08);
-                let shiftX = Math.sin(progress * Math.PI * 2) * 20;
-
-                ctx.save();
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                ctx.translate(canvas.width / 2 + shiftX, canvas.height / 2);
-                ctx.scale(scale, scale);
-                ctx.drawImage(uploadedImgObj, -canvas.width / 2, -canvas.height / 2, canvas.width, canvas.height);
-                ctx.restore();
-
-                if (progress < 1) {
-                    // Update progress status every few seconds
-                    let secondsRemaining = Math.ceil((duration - elapsed) / 1000);
-                    statusMsg.innerText = `Video rendering in progress... (${secondsRemaining} sec remaining)`;
-                    requestAnimationFrame(animate);
-                } else {
-                    setTimeout(() => { mediaRecorder.stop(); }, 200);
-                }
+                statusMsg.innerText = 'Real AI Video generate ho gaya hai!';
             }
 
-            requestAnimationFrame(animate);
-
-        } catch (error) {
-            console.error(error);
-            statusMsg.innerText = 'Error: Video render nahi ho paya. Dobara try karein.';
+        } catch (err) {
+            console.error(err);
+            statusMsg.innerText = 'Error: ' + err.message;
+        } finally {
             generateBtn.disabled = false;
         }
     }
