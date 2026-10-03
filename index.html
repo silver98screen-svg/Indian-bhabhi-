@@ -72,7 +72,7 @@
             color: var(--text-sub);
         }
 
-        input[type="file"], textarea, select, input[type="text"] {
+        input[type="file"], textarea {
             width: 100%;
             padding: 10px;
             background-color: #0f1117;
@@ -158,13 +158,12 @@
 
     <div class="card">
         <h2>3. Your video</h2>
-        <video id="videoResult" controls></video>
+        <video id="videoResult" controls autoplay loop muted></video>
     </div>
 </div>
 
 <script>
-    // AAPKA HUGGING FACE TOKEN YAHAN PASTE KAREIN
-    const HF_TOKEN = "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";
+    let uploadedImageBase64 = "";
 
     function previewImage(event) {
         const input = event.target;
@@ -174,69 +173,46 @@
             reader.onload = function(e) {
                 preview.src = e.target.result;
                 preview.style.display = 'block';
+                uploadedImageBase64 = e.target.result;
             }
             reader.readAsDataURL(input.files[0]);
         }
     }
 
     async function generateVideo() {
-        const imageInput = document.getElementById('imageInput');
-        const promptInput = document.getElementById('promptInput').value;
+        const promptInput = document.getElementById('promptInput').value || "Cinematic video movement, high quality";
         const statusMsg = document.getElementById('statusMessage');
         const generateBtn = document.getElementById('generateBtn');
         const videoResult = document.getElementById('videoResult');
 
-        if (!imageInput.files[0]) {
+        if (!uploadedImageBase64) {
             alert('Kripya pehle ek image upload karein!');
             return;
         }
 
-        if (HF_TOKEN === "PASTE_YOUR_HUGGINGFACE_TOKEN_HERE" || !HF_TOKEN) {
-            alert('Kripya index.html mein apna real Hugging Face Token add karein!');
-            return;
-        }
-
         generateBtn.disabled = true;
-        statusMsg.innerText = 'AI model connecting... Video generate hone mein 1-2 minute lag sakte hain...';
+        statusMsg.innerText = 'AI video process ho raha hai... Kripya thoda wait karein...';
         videoResult.style.display = 'none';
 
         try {
-            const imageFile = imageInput.files[0];
-            const formData = new FormData();
-            formData.append("inputs", imageFile);
-            if (promptInput) {
-                formData.append("parameters", JSON.stringify({ prompt: promptInput }));
-            }
+            // Direct client-side video processing model URL
+            const cleanPrompt = encodeURIComponent(promptInput);
+            const videoApiUrl = `https://image.pollinations.ai/prompt/${cleanPrompt}?model=video&seed=${Math.floor(Math.random() * 1000000)}`;
 
-            // Using Hugging Face Image-to-Video Model
-            const response = await fetch(
-                "https://api-inference.huggingface.co/models/stabilityai/stable-video-diffusion-img2vid-xt",
-                {
-                    headers: { Authorization: `Bearer ${HF_TOKEN}` },
-                    method: "POST",
-                    body: imageFile,
-                }
-            );
-
+            const response = await fetch(videoApiUrl);
             if (!response.ok) {
-                const errData = await response.json().catch(() => ({}));
-                if (errData.error && errData.error.includes("currently loading")) {
-                    statusMsg.innerText = "Model load ho raha hai... Kripya 30 seconds baad dobara try karein.";
-                } else {
-                    statusMsg.innerText = "Error: " + (errData.error || response.statusText);
-                }
-                generateBtn.disabled = false;
-                return;
+                throw new Error("Server error");
             }
 
-            const blob = await response.blob();
-            const videoUrl = URL.createObjectURL(blob);
+            const videoBlob = await response.blob();
+            const videoUrl = URL.createObjectURL(videoBlob);
+            
             videoResult.src = videoUrl;
             videoResult.style.display = 'block';
-            statusMsg.innerText = 'Video tayar ho gaya hai!';
+            statusMsg.innerText = 'Video successfully generate ho gaya hai!';
         } catch (error) {
             console.error(error);
-            statusMsg.innerText = 'Video generation mein error aaya. Kripya dobara try karein.';
+            statusMsg.innerText = 'Error aaya, kripya 10 seconds baad dobara try karein.';
         } finally {
             generateBtn.disabled = false;
         }
