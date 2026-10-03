@@ -1,137 +1,247 @@
-
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hi">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FreeFrame AI</title>
-<style>
-*{box-sizing:border-box}
-body{margin:0;background:#10111b;color:#f5f5ff;font-family:Arial,sans-serif}
-header{padding:22px 18px;text-align:center;background:#191a29;border-bottom:1px solid #34354a}
-header h1{margin:0;font-size:29px;color:#a99bff}
-header p{margin:8px 0 0;color:#c0c0d2;font-size:14px}
-main{max-width:650px;margin:auto;padding:18px}
-.card{background:#1b1c2b;border:1px solid #35364c;border-radius:16px;padding:18px;margin-bottom:16px}
-h2{font-size:18px;margin:0 0 14px}
-label{display:block;margin:14px 0 8px;font-size:14px;color:#e0e0f0}
-input,textarea,select{width:100%;padding:12px;background:#11121d;color:white;border:1px solid #44455e;border-radius:9px;font-size:15px}
-textarea{min-height:100px;resize:vertical}
-input[type=file]{font-size:13px}
-button{width:100%;border:0;border-radius:10px;padding:14px;font-size:16px;font-weight:bold;cursor:pointer}
-.primary{background:#8775ff;color:white;margin-top:16px}
-.secondary{background:#303146;color:white;margin-top:10px}
-#preview{display:none;width:100%;max-height:350px;object-fit:contain;margin-top:14px;border-radius:10px;background:#10111b}
-#status{font-size:14px;line-height:1.6;color:#d2d0ff;margin-top:12px;overflow-wrap:anywhere}
-.small{font-size:12px;line-height:1.6;color:#aaaabd}
-footer{text-align:center;padding:18px;color:#85869b;font-size:12px}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FreeFrame AI - Image to Video</title>
+    <style>
+        :root {
+            --bg-color: #0f1117;
+            --card-bg: #1a1d27;
+            --accent-color: #7c4dff;
+            --accent-hover: #651fff;
+            --text-main: #ffffff;
+            --text-sub: #9e9e9e;
+            --border-color: #2a2d3d;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 28px;
+            color: var(--accent-color);
+        }
+
+        header p {
+            margin: 5px 0 0 0;
+            color: var(--text-sub);
+            font-size: 14px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .card h2 {
+            margin-top: 0;
+            font-size: 18px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        label {
+            display: block;
+            margin-top: 15px;
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: var(--text-sub);
+        }
+
+        input[type="file"], textarea, select, input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            background-color: #0f1117;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: #fff;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+
+        textarea {
+            resize: vertical;
+            height: 80px;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 20px;
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: var(--accent-hover);
+        }
+
+        button:disabled {
+            background-color: #4a4a4a;
+            cursor: not-allowed;
+        }
+
+        #imagePreview {
+            max-width: 100%;
+            margin-top: 10px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        #statusMessage {
+            margin-top: 15px;
+            font-size: 14px;
+            text-align: center;
+            color: #ffd54f;
+        }
+
+        video {
+            width: 100%;
+            border-radius: 8px;
+            margin-top: 15px;
+            display: none;
+        }
+    </style>
 </head>
 <body>
-<header>
-  <h1>✨ FreeFrame AI</h1>
-  <p>Turn your ideas into moving pictures</p>
-</header>
 
-<main>
-  <div class="card">
-    <h2>1. Upload your image</h2>
-    <label for="image">Choose an image</label>
-    <input id="image" type="file" accept="image/png,image/jpeg,image/webp">
-    <img id="preview" alt="Selected image preview">
-    <button class="secondary" id="clear" type="button">Remove image</button>
-  </div>
+<div class="container">
+    <header>
+        <h1>FreeFrame AI</h1>
+        <p>Free Image-to-Video Generator</p>
+    </header>
 
-  <div class="card">
-    <h2>2. Describe your video</h2>
-    <label for="prompt">Video prompt</label>
-    <textarea id="prompt" maxlength="1000"
-      placeholder="Example: A beautiful garden, flowers moving gently in the breeze, slow cinematic camera movement..."></textarea>
+    <div class="card">
+        <h2>1. Upload Image</h2>
+        <input type="file" id="imageInput" accept="image/*" onchange="previewImage(event)">
+        <img id="imagePreview" alt="Image preview">
+    </div>
 
-    <label for="duration">Video duration</label>
-    <select id="duration">
-      <option value="5">5 seconds</option>
-      <option value="8">8 seconds</option>
-    </select>
+    <div class="card">
+        <h2>2. Describe your video</h2>
+        <label for="promptInput">Video prompt</label>
+        <textarea id="promptInput" placeholder="Describe the motion e.g., camera zoom in, clouds moving..."></textarea>
 
-    <label for="motion">Camera movement</label>
-    <select id="motion">
-      <option value="Natural movement">Natural movement</option>
-      <option value="Slow zoom in">Slow zoom in</option>
-      <option value="Slow zoom out">Slow zoom out</option>
-      <option value="Camera pans left">Camera pans left</option>
-      <option value="Camera pans right">Camera pans right</option>
-    </select>
+        <button id="generateBtn" onclick="generateVideo()">Generate Video</button>
+        <div id="statusMessage"></div>
+    </div>
 
-    <button class="primary" id="generate" type="button">Generate Video</button>
-    <div id="status" role="status">Ready. Upload an image and enter a prompt.</div>
-    <p class="small">This is the first interface version. Video generation needs a connected AI backend.</p>
-  </div>
-
-  <div class="card">
-    <h2>3. Your video</h2>
-    <video id="result" controls playsinline
-      style="display:none;width:100%;border-radius:10px"></video>
-    <a id="download" style="display:none;color:#b8adff;margin-top:12px"
-       download="freeframe-video.mp4">Download video</a>
-    <p id="resultnote" class="small">Your generated video will appear here after a video service is connected.</p>
-  </div>
-</main>
-
-<footer>FreeFrame AI · Free project · Version 1.0</footer>
+    <div class="card">
+        <h2>3. Your video</h2>
+        <video id="videoResult" controls></video>
+    </div>
+</div>
 
 <script>
-const imageInput = document.getElementById('image');
-const preview = document.getElementById('preview');
-const promptInput = document.getElementById('prompt');
-const statusBox = document.getElementById('status');
-let previewUrl = '';
+    // AAPKA HUGGING FACE TOKEN YAHAN PASTE KAREIN
+    const HF_TOKEN = "PASTE_YOUR_HUGGINGFACE_TOKEN_HERE";
 
-imageInput.addEventListener('change', () => {
-  if (previewUrl) URL.revokeObjectURL(previewUrl);
-  const file = imageInput.files[0];
+    function previewImage(event) {
+        const input = event.target;
+        const preview = document.getElementById('imagePreview');
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
 
-  if (!file) {
-    preview.style.display = 'none';
-    return;
-  }
+    async function generateVideo() {
+        const imageInput = document.getElementById('imageInput');
+        const promptInput = document.getElementById('promptInput').value;
+        const statusMsg = document.getElementById('statusMessage');
+        const generateBtn = document.getElementById('generateBtn');
+        const videoResult = document.getElementById('videoResult');
 
-  if (!file.type.startsWith('image/')) {
-    statusBox.textContent = 'Please choose a valid image.';
-    imageInput.value = '';
-    return;
-  }
+        if (!imageInput.files[0]) {
+            alert('Kripya pehle ek image upload karein!');
+            return;
+        }
 
-  previewUrl = URL.createObjectURL(file);
-  preview.src = previewUrl;
-  preview.style.display = 'block';
-  statusBox.textContent = 'Image selected. Now enter your video prompt.';
-});
+        if (HF_TOKEN === "PASTE_YOUR_HUGGINGFACE_TOKEN_HERE" || !HF_TOKEN) {
+            alert('Kripya index.html mein apna real Hugging Face Token add karein!');
+            return;
+        }
 
-document.getElementById('clear').addEventListener('click', () => {
-  imageInput.value = '';
-  preview.removeAttribute('src');
-  preview.style.display = 'none';
-  if (previewUrl) URL.revokeObjectURL(previewUrl);
-  previewUrl = '';
-  statusBox.textContent = 'Image removed.';
-});
+        generateBtn.disabled = true;
+        statusMsg.innerText = 'AI model connecting... Video generate hone mein 1-2 minute lag sakte hain...';
+        videoResult.style.display = 'none';
 
-document.getElementById('generate').addEventListener('click', () => {
-  if (!imageInput.files.length) {
-    statusBox.textContent = 'Please upload an image first.';
-    return;
-  }
+        try {
+            const imageFile = imageInput.files[0];
+            const formData = new FormData();
+            formData.append("inputs", imageFile);
+            if (promptInput) {
+                formData.append("parameters", JSON.stringify({ prompt: promptInput }));
+            }
 
-  if (!promptInput.value.trim()) {
-    statusBox.textContent = 'Please write a video prompt first.';
-    return;
-  }
+            // Using Hugging Face Image-to-Video Model
+            const response = await fetch(
+                "https://api-inference.huggingface.co/models/stabilityai/stable-video-diffusion-img2vid-xt",
+                {
+                    headers: { Authorization: `Bearer ${HF_TOKEN}` },
+                    method: "POST",
+                    body: imageFile,
+                }
+            );
 
-  statusBox.textContent =
-    'Your image and prompt are ready. The AI video backend is not connected yet, so a video cannot be generated from this page yet.';
-});
+            if (!response.ok) {
+                const errData = await response.json().catch(() => ({}));
+                if (errData.error && errData.error.includes("currently loading")) {
+                    statusMsg.innerText = "Model load ho raha hai... Kripya 30 seconds baad dobara try karein.";
+                } else {
+                    statusMsg.innerText = "Error: " + (errData.error || response.statusText);
+                }
+                generateBtn.disabled = false;
+                return;
+            }
+
+            const blob = await response.blob();
+            const videoUrl = URL.createObjectURL(blob);
+            videoResult.src = videoUrl;
+            videoResult.style.display = 'block';
+            statusMsg.innerText = 'Video tayar ho gaya hai!';
+        } catch (error) {
+            console.error(error);
+            statusMsg.innerText = 'Video generation mein error aaya. Kripya dobara try karein.';
+        } finally {
+            generateBtn.disabled = false;
+        }
+    }
 </script>
+
 </body>
 </html>
-
