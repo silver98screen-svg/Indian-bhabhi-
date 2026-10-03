@@ -1,1 +1,137 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FreeFrame AI</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#10111b;color:#f5f5ff;font-family:Arial,sans-serif}
+header{padding:22px 18px;text-align:center;background:#191a29;border-bottom:1px solid #34354a}
+header h1{margin:0;font-size:29px;color:#a99bff}
+header p{margin:8px 0 0;color:#c0c0d2;font-size:14px}
+main{max-width:650px;margin:auto;padding:18px}
+.card{background:#1b1c2b;border:1px solid #35364c;border-radius:16px;padding:18px;margin-bottom:16px}
+h2{font-size:18px;margin:0 0 14px}
+label{display:block;margin:14px 0 8px;font-size:14px;color:#e0e0f0}
+input,textarea,select{width:100%;padding:12px;background:#11121d;color:white;border:1px solid #44455e;border-radius:9px;font-size:15px}
+textarea{min-height:100px;resize:vertical}
+input[type=file]{font-size:13px}
+button{width:100%;border:0;border-radius:10px;padding:14px;font-size:16px;font-weight:bold;cursor:pointer}
+.primary{background:#8775ff;color:white;margin-top:16px}
+.secondary{background:#303146;color:white;margin-top:10px}
+#preview{display:none;width:100%;max-height:350px;object-fit:contain;margin-top:14px;border-radius:10px;background:#10111b}
+#status{font-size:14px;line-height:1.6;color:#d2d0ff;margin-top:12px;overflow-wrap:anywhere}
+.small{font-size:12px;line-height:1.6;color:#aaaabd}
+footer{text-align:center;padding:18px;color:#85869b;font-size:12px}
+</style>
+</head>
+<body>
+<header>
+  <h1>✨ FreeFrame AI</h1>
+  <p>Turn your ideas into moving pictures</p>
+</header>
+
+<main>
+  <div class="card">
+    <h2>1. Upload your image</h2>
+    <label for="image">Choose an image</label>
+    <input id="image" type="file" accept="image/png,image/jpeg,image/webp">
+    <img id="preview" alt="Selected image preview">
+    <button class="secondary" id="clear" type="button">Remove image</button>
+  </div>
+
+  <div class="card">
+    <h2>2. Describe your video</h2>
+    <label for="prompt">Video prompt</label>
+    <textarea id="prompt" maxlength="1000"
+      placeholder="Example: A beautiful garden, flowers moving gently in the breeze, slow cinematic camera movement..."></textarea>
+
+    <label for="duration">Video duration</label>
+    <select id="duration">
+      <option value="5">5 seconds</option>
+      <option value="8">8 seconds</option>
+    </select>
+
+    <label for="motion">Camera movement</label>
+    <select id="motion">
+      <option value="Natural movement">Natural movement</option>
+      <option value="Slow zoom in">Slow zoom in</option>
+      <option value="Slow zoom out">Slow zoom out</option>
+      <option value="Camera pans left">Camera pans left</option>
+      <option value="Camera pans right">Camera pans right</option>
+    </select>
+
+    <button class="primary" id="generate" type="button">Generate Video</button>
+    <div id="status" role="status">Ready. Upload an image and enter a prompt.</div>
+    <p class="small">This is the first interface version. Video generation needs a connected AI backend.</p>
+  </div>
+
+  <div class="card">
+    <h2>3. Your video</h2>
+    <video id="result" controls playsinline
+      style="display:none;width:100%;border-radius:10px"></video>
+    <a id="download" style="display:none;color:#b8adff;margin-top:12px"
+       download="freeframe-video.mp4">Download video</a>
+    <p id="resultnote" class="small">Your generated video will appear here after a video service is connected.</p>
+  </div>
+</main>
+
+<footer>FreeFrame AI · Free project · Version 1.0</footer>
+
+<script>
+const imageInput = document.getElementById('image');
+const preview = document.getElementById('preview');
+const promptInput = document.getElementById('prompt');
+const statusBox = document.getElementById('status');
+let previewUrl = '';
+
+imageInput.addEventListener('change', () => {
+  if (previewUrl) URL.revokeObjectURL(previewUrl);
+  const file = imageInput.files[0];
+
+  if (!file) {
+    preview.style.display = 'none';
+    return;
+  }
+
+  if (!file.type.startsWith('image/')) {
+    statusBox.textContent = 'Please choose a valid image.';
+    imageInput.value = '';
+    return;
+  }
+
+  previewUrl = URL.createObjectURL(file);
+  preview.src = previewUrl;
+  preview.style.display = 'block';
+  statusBox.textContent = 'Image selected. Now enter your video prompt.';
+});
+
+document.getElementById('clear').addEventListener('click', () => {
+  imageInput.value = '';
+  preview.removeAttribute('src');
+  preview.style.display = 'none';
+  if (previewUrl) URL.revokeObjectURL(previewUrl);
+  previewUrl = '';
+  statusBox.textContent = 'Image removed.';
+});
+
+document.getElementById('generate').addEventListener('click', () => {
+  if (!imageInput.files.length) {
+    statusBox.textContent = 'Please upload an image first.';
+    return;
+  }
+
+  if (!promptInput.value.trim()) {
+    statusBox.textContent = 'Please write a video prompt first.';
+    return;
+  }
+
+  statusBox.textContent =
+    'Your image and prompt are ready. The AI video backend is not connected yet, so a video cannot be generated from this page yet.';
+});
+</script>
+</body>
+</html>
+
