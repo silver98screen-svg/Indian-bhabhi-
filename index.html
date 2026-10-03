@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FreeFrame AI - Real Motion Generator</title>
+    <title>FreeFrame AI - Kids Cartoon Generator</title>
     <style>
         :root {
             --bg-color: #0f1117;
@@ -71,7 +71,7 @@
             color: var(--text-sub);
         }
 
-        input[type="file"], textarea, select {
+        input[type="file"], input[type="password"], textarea {
             width: 100%;
             padding: 10px;
             background-color: #0f1117;
@@ -137,32 +137,37 @@
 <div class="container">
     <header>
         <h1>FreeFrame AI</h1>
-        <p>Real AI Character & Facial Motion Generator</p>
+        <p>Kids Cartoon Image-to-Video Generator</p>
     </header>
 
     <div class="card">
-        <h2>1. Upload Character Image</h2>
-        <input type="file" id="imageInput" accept="image/*" onchange="previewImage(event)">
-        <img id="imagePreview" alt="Image preview">
+        <h2>1. Replicate API Key</h2>
+        <label for="apiKeyInput">API Key (r8_...)</label>
+        <input type="password" id="apiKeyInput" placeholder="Paste your Replicate API Token here">
     </div>
 
     <div class="card">
-        <h2>2. Describe Real Motion</h2>
-        <label for="promptInput">Motion Prompt</label>
-        <textarea id="promptInput" placeholder="E.g., Funny cartoon style, opening mouth wide, head bouncing up and down, saliva dropping, expressive facial reaction..."></textarea>
+        <h2>2. Upload Cartoon Character Image</h2>
+        <input type="file" id="imageInput" accept="image/*" onchange="previewImage(event)">
+        <img id="imagePreview" alt="Cartoon Image preview">
+    </div>
 
-        <button id="generateBtn" onclick="generateRealVideo()">Generate Real Motion Video</button>
+    <div class="card">
+        <h2>3. Describe Cartoon Animation</h2>
+        <label for="promptInput">Animation Prompt</label>
+        <textarea id="promptInput" placeholder="E.g., Funny kids cartoon, character smiling and opening mouth wide, head bouncing up and down, cheerful expressions..."></textarea>
+
+        <button id="generateBtn" onclick="generateCartoonVideo()">Generate Cartoon Video</button>
         <div id="statusMessage"></div>
     </div>
 
     <div class="card">
-        <h2>3. Output Video</h2>
+        <h2>4. Generated Video</h2>
         <video id="videoResult" controls autoplay loop playsinline></video>
     </div>
 </div>
 
 <script>
-    const REPLICATE_KEY = "R8_ce87Mh6zZrLjshQBf2VlrJMGn1VOGu945nAqH";
     let base64Image = "";
 
     function previewImage(event) {
@@ -179,19 +184,25 @@
         }
     }
 
-    async function generateRealVideo() {
-        const promptText = document.getElementById('promptInput').value || "Expressive cartoon motion, opening mouth, dynamic movement";
+    async function generateCartoonVideo() {
+        const apiKey = document.getElementById('apiKeyInput').value.trim();
+        const promptText = document.getElementById('promptInput').value || "Cute cartoon character moving, facial expressions, bouncing motion";
         const statusMsg = document.getElementById('statusMessage');
         const generateBtn = document.getElementById('generateBtn');
         const videoResult = document.getElementById('videoResult');
 
+        if (!apiKey) {
+            alert('Kripya apni Replicate API Key daalein!');
+            return;
+        }
+
         if (!base64Image) {
-            alert('Kripya pehle ek character image upload karein!');
+            alert('Kripya pehle ek cartoon character image upload karein!');
             return;
         }
 
         generateBtn.disabled = true;
-        statusMsg.innerText = 'AI model character motion render kar raha hai... Please wait (30-60 sec)...';
+        statusMsg.innerText = 'AI Cartoon model process kar raha hai... Kripya 30-60 sec wait karein...';
         videoResult.style.display = 'none';
 
         try {
@@ -201,7 +212,7 @@
             const response = await fetch(proxy + encodeURIComponent(targetUrl), {
                 method: "POST",
                 headers: {
-                    "Authorization": `Bearer ${REPLICATE_KEY}`,
+                    "Authorization": `Bearer ${apiKey}`,
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
@@ -218,7 +229,7 @@
             const data = await response.json();
 
             if (!response.ok || data.error) {
-                throw new Error(data.error || "Prediction request failed");
+                throw new Error(data.error || "API Key invalid hai ya account balance khatam ho gaya hai.");
             }
 
             let pollUrl = proxy + encodeURIComponent(data.urls.get);
@@ -227,7 +238,7 @@
             while (true) {
                 await new Promise(res => setTimeout(res, 4000));
                 const pollRes = await fetch(pollUrl, {
-                    headers: { "Authorization": `Bearer ${REPLICATE_KEY}` }
+                    headers: { "Authorization": `Bearer ${apiKey}` }
                 });
                 const pollData = await pollRes.json();
 
@@ -235,9 +246,9 @@
                     finalVideoUrl = Array.isArray(pollData.output) ? pollData.output[0] : pollData.output;
                     break;
                 } else if (pollData.status === "failed" || pollData.status === "canceled") {
-                    throw new Error("AI rendering failed. Try a different prompt.");
+                    throw new Error("Video generation fail ho gaya. Image ya prompt change karke try karein.");
                 }
-                statusMsg.innerText = `Rendering status: ${pollData.status}... AI motion generate ho raha hai...`;
+                statusMsg.innerText = `Status: ${pollData.status}... Cartoon AI render ho raha hai...`;
             }
 
             if (finalVideoUrl) {
@@ -245,7 +256,7 @@
                 videoResult.style.display = 'block';
                 videoResult.load();
                 videoResult.play();
-                statusMsg.innerText = 'Real AI Video generate ho gaya hai!';
+                statusMsg.innerText = 'Cartoon Video successfully generate ho gaya!';
             }
 
         } catch (err) {
