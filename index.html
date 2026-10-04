@@ -155,7 +155,7 @@
     <div class="card">
         <h2>3. Describe Cartoon Animation</h2>
         <label for="promptInput">Animation Prompt</label>
-        <textarea id="promptInput" placeholder="E.g., Funny kids cartoon, character smiling and opening mouth wide, head bouncing up and down, cheerful expressions..."></textarea>
+        <textarea id="promptInput" placeholder="E.g., Funny kids cartoon, character smiling and opening mouth wide, head bouncing up and down..."></textarea>
 
         <button id="generateBtn" onclick="generateCartoonVideo()">Generate Cartoon Video</button>
         <div id="statusMessage"></div>
@@ -202,17 +202,17 @@
         }
 
         generateBtn.disabled = true;
-        statusMsg.innerText = 'AI Cartoon model process kar raha hai... Kripya 30-60 sec wait karein...';
+        statusMsg.innerText = 'AI Cartoon model process kar raha hai... Wait karein...';
         videoResult.style.display = 'none';
 
         try {
-            const proxy = "https://api.allorigins.win/raw?url=";
+            // Direct Replicate API URL
             const targetUrl = "https://api.replicate.com/v1/predictions";
             
-            const response = await fetch(proxy + encodeURIComponent(targetUrl), {
+            const response = await fetch(targetUrl, {
                 method: "POST",
                 headers: {
-                    "Authorization": `Bearer ${apiKey}`,
+                    "Authorization": `Token ${apiKey}`,
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
@@ -229,16 +229,16 @@
             const data = await response.json();
 
             if (!response.ok || data.error) {
-                throw new Error(data.error || "API Key invalid hai ya account balance khatam ho gaya hai.");
+                throw new Error(data.error || "API Key invalid hai ya error aaya hai.");
             }
 
-            let pollUrl = proxy + encodeURIComponent(data.urls.get);
+            let pollUrl = data.urls.get;
             let finalVideoUrl = "";
 
             while (true) {
                 await new Promise(res => setTimeout(res, 4000));
                 const pollRes = await fetch(pollUrl, {
-                    headers: { "Authorization": `Bearer ${apiKey}` }
+                    headers: { "Authorization": `Token ${apiKey}` }
                 });
                 const pollData = await pollRes.json();
 
@@ -246,7 +246,7 @@
                     finalVideoUrl = Array.isArray(pollData.output) ? pollData.output[0] : pollData.output;
                     break;
                 } else if (pollData.status === "failed" || pollData.status === "canceled") {
-                    throw new Error("Video generation fail ho gaya. Image ya prompt change karke try karein.");
+                    throw new Error("Video generation fail ho gaya.");
                 }
                 statusMsg.innerText = `Status: ${pollData.status}... Cartoon AI render ho raha hai...`;
             }
