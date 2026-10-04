@@ -206,7 +206,7 @@
         videoResult.style.display = 'none';
 
         try {
-            const proxy = "https://corsproxy.io/?";
+            const proxy = "https://api.allorigins.win/raw?url=";
             const targetUrl = "https://api.replicate.com/v1/predictions";
             
             const response = await fetch(proxy + encodeURIComponent(targetUrl), {
